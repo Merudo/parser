@@ -16,7 +16,7 @@ package net.rptools.parser.function.impl;
 
 import java.math.BigDecimal;
 import java.util.List;
-import net.rptools.parser.Parser;
+import net.rptools.parser.MapToolParser;
 import net.rptools.parser.function.AbstractNumberFunction;
 
 public class AbsoluteValue extends AbstractNumberFunction {
@@ -25,7 +25,7 @@ public class AbsoluteValue extends AbstractNumberFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters) {
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters) {
     BigDecimal value = (BigDecimal) parameters.get(0);
 
     return value.abs();

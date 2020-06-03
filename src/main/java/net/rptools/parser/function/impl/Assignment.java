@@ -15,7 +15,7 @@
 package net.rptools.parser.function.impl;
 
 import java.util.List;
-import net.rptools.parser.Parser;
+import net.rptools.parser.MapToolParser;
 import net.rptools.parser.ParserException;
 import net.rptools.parser.function.AbstractFunction;
 
@@ -25,7 +25,7 @@ public class Assignment extends AbstractFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws ParserException {
 
     String name = (String) parameters.get(0);

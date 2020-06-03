@@ -14,7 +14,6 @@
  */
 package net.rptools.parser;
 
-import antlr.CommonAST;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
@@ -22,34 +21,35 @@ import junit.framework.TestCase;
 import net.rptools.parser.function.AbstractFunction;
 import net.rptools.parser.function.EvaluationException;
 import net.rptools.parser.function.ParameterException;
+import org.antlr.runtime.tree.Tree;
 
 public class ParserTest extends TestCase {
 
   public void testParseExpressionSimple() throws ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     Expression xp = p.parseExpression("1+2");
 
-    CommonAST tree = (CommonAST) xp.getTree();
+    Tree tree = xp.getTree();
     assertEquals(" ( + 1 2 )", tree.toStringTree());
   }
 
   public void testParseExpression() throws ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     Expression xp = p.parseExpression("200+2+roll(2,4)");
 
-    CommonAST tree = (CommonAST) xp.getTree();
+    Tree tree = xp.getTree();
     assertEquals(" ( + ( + 200 2 ) ( roll 2 4 ) )", tree.toStringTree());
   }
 
   public void testEvaluateSimple() throws ParserException, EvaluationException, ParameterException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     Expression xp = p.parseExpression("1 + 2");
 
     assertEquals(new BigDecimal(3), xp.evaluate());
   }
 
   public void testEvaluate() throws ParserException, EvaluationException, ParameterException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateExpression(p, "1 + 2", new BigDecimal(3));
     evaluateExpression(p, "5 - 2", new BigDecimal(3));
@@ -72,12 +72,13 @@ public class ParserTest extends TestCase {
 
   public void testEvaluateCustomFunction()
       throws ParserException, EvaluationException, ParameterException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     p.addFunction(
         new AbstractFunction(1, 1, "increment") {
 
           @Override
-          public Object childEvaluate(Parser parser, String functionName, List<Object> parameters) {
+          public Object childEvaluate(
+              MapToolParser parser, String functionName, List<Object> parameters) {
             BigDecimal value = (BigDecimal) parameters.get(0);
             return value.add(BigDecimal.ONE);
           }
@@ -91,7 +92,7 @@ public class ParserTest extends TestCase {
 
   public void testEvaluateVariables()
       throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     p.setVariable("ii", new BigDecimal(100));
 
     evaluateExpression(p, "ii", new BigDecimal(100));
@@ -109,7 +110,7 @@ public class ParserTest extends TestCase {
   }
 
   public void testMath() throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateExpression(p, "abs(10)", new BigDecimal(10));
     evaluateExpression(p, "abs(-10)", new BigDecimal(10));
@@ -141,7 +142,7 @@ public class ParserTest extends TestCase {
 
   public void testStringParameters()
       throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateStringExpression(p, "\"foo\" + \"bar\"", "foobar");
     evaluateStringExpression(p, "1 + 2 + \"foo\" + \"bar\"", "3foobar");
@@ -149,7 +150,7 @@ public class ParserTest extends TestCase {
   }
 
   public void testAssignment() throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateExpression(p, "a = 5", new BigDecimal(5));
     assertEquals(p.getVariable("a"), new BigDecimal(5));
@@ -165,14 +166,14 @@ public class ParserTest extends TestCase {
   }
 
   public void testEval() throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateExpression(p, "eval('2*2')", new BigDecimal(4));
     evaluateExpression(p, "eval('a=2*2', 'b=3+1', 'a*b')", new BigDecimal(16));
   }
 
   public void testBitwise() throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateExpression(p, "band(1, 2)", BigDecimal.ZERO);
     evaluateExpression(p, "bor(1, 2)", new BigDecimal(3));
@@ -184,7 +185,7 @@ public class ParserTest extends TestCase {
   }
 
   public void testHexNumber() throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateExpression(p, "0xFF", new BigDecimal(255));
 
@@ -195,7 +196,7 @@ public class ParserTest extends TestCase {
 
   public void testLogicalOperators()
       throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateExpression(p, "true", BigDecimal.ONE);
     evaluateExpression(p, "false", BigDecimal.ZERO);
@@ -233,7 +234,7 @@ public class ParserTest extends TestCase {
 
   public void testLogicalOperators_StringSupport()
       throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateExpression(p, "'foo' == 'foo'", BigDecimal.ONE);
     evaluateExpression(p, "'foo' != 'bar'", BigDecimal.ONE);
@@ -247,12 +248,12 @@ public class ParserTest extends TestCase {
 
   public void testMultilineExpressions()
       throws EvaluationException, ParameterException, ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     evaluateExpression(p, "10 + \n17 + \r\n3", new BigDecimal(30));
   }
 
-  private void evaluateExpression(Parser p, String expression, BigDecimal answer)
+  private void evaluateExpression(MapToolParser p, String expression, BigDecimal answer)
       throws EvaluationException, ParameterException, ParserException {
 
     BigDecimal result = (BigDecimal) p.parseExpression(expression).evaluate();
@@ -262,7 +263,7 @@ public class ParserTest extends TestCase {
         answer.compareTo(result) == 0);
   }
 
-  private void evaluateStringExpression(Parser p, String expression, String answer)
+  private void evaluateStringExpression(MapToolParser p, String expression, String answer)
       throws EvaluationException, ParameterException, ParserException {
     String result = (String) p.parseExpression(expression).evaluate();
 

@@ -14,10 +14,6 @@
  */
 package net.rptools.parser;
 
-import antlr.CommonAST;
-import antlr.RecognitionException;
-import antlr.TokenStreamException;
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -61,11 +57,15 @@ import net.rptools.parser.function.impl.StrEquals;
 import net.rptools.parser.function.impl.StrNotEquals;
 import net.rptools.parser.function.impl.Subtraction;
 import net.rptools.parser.transform.Transformer;
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.RecognitionException;
+import org.antlr.runtime.tree.Tree;
 
-public class Parser implements VariableResolver {
-  private final Map<String, Function> functions = new CaseInsensitiveHashMap<Function>();
+public class MapToolParser implements VariableResolver {
+  private final Map<String, Function> functions = new CaseInsensitiveHashMap<>();
 
-  private final List<Transformer> transforms = new ArrayList<Transformer>();
+  private final List<Transformer> transforms = new ArrayList<>();
 
   private final EvaluationTreeParser evaluationTreeParser;
 
@@ -75,15 +75,15 @@ public class Parser implements VariableResolver {
   // Constructor(s)
   ///////////////////////////////////////////////////////////////////////////
 
-  public Parser() {
+  public MapToolParser() {
     this(true);
   }
 
-  public Parser(boolean addDefaultFunctions) {
+  public MapToolParser(boolean addDefaultFunctions) {
     this(null, addDefaultFunctions);
   }
 
-  public Parser(VariableResolver variableResolver, boolean addDefaultFunctions) {
+  public MapToolParser(VariableResolver variableResolver, boolean addDefaultFunctions) {
 
     if (addDefaultFunctions) {
       addStandardOperators();
@@ -236,7 +236,7 @@ public class Parser implements VariableResolver {
     return variableResolver.getVariables();
   }
 
-  public EvaluationTreeParser getEvaluationTreeParser() throws ParserException {
+  public EvaluationTreeParser getEvaluationTreeParser() {
     return evaluationTreeParser;
   }
 
@@ -248,17 +248,15 @@ public class Parser implements VariableResolver {
     try {
       String s = applyTransforms(expression);
 
-      ExpressionLexer lexer = new ExpressionLexer(new ByteArrayInputStream(s.getBytes()));
-      ExpressionParser parser = new ExpressionParser(lexer);
+      ANTLRStringStream stream = new ANTLRStringStream(s);
+      ExpressionLexer lexer = new ExpressionLexer(stream);
+      CommonTokenStream tokens = new CommonTokenStream(lexer);
+      ExpressionParser parser = new ExpressionParser(tokens);
 
-      parser.expression();
-      CommonAST t = (CommonAST) parser.getAST();
-
-      return new Expression(this, parser, t);
+      Tree tree = (Tree) parser.expression().tree;
+      return new Expression(this, parser, tree);
 
     } catch (RecognitionException e) {
-      throw new ParserException(e);
-    } catch (TokenStreamException e) {
       throw new ParserException(e);
     }
   }

@@ -14,31 +14,31 @@
  */
 package net.rptools.parser;
 
-import antlr.collections.AST;
 import java.math.BigDecimal;
 import java.util.List;
 import junit.framework.TestCase;
 import net.rptools.parser.function.AbstractNumberFunction;
 import net.rptools.parser.function.EvaluationException;
 import net.rptools.parser.function.ParameterException;
+import org.antlr.runtime.tree.Tree;
 
 public class DeterministicTreeParserTest extends TestCase {
   public void testEvaluateOnlyDeterministicFunctions()
       throws ParserException, EvaluationException, ParameterException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     Expression xp = p.parseExpression("200+2+2*2");
     Expression dxp = xp.getDeterministicExpression();
 
     assertSame(xp, dxp);
 
-    AST tree = xp.getTree();
-    AST deterministicTree = dxp.getTree();
+    Tree tree = xp.getTree();
+    Tree deterministicTree = dxp.getTree();
 
-    assertTrue(deterministicTree.equalsTree(tree));
+    assertTrue(deterministicTree.equals(tree));
   }
 
   public void testEvaluate() throws ParserException, EvaluationException, ParameterException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     p.addFunction(new NonDeterministicFunction());
 
     Expression xp = p.parseExpression("200+2+nondeterministic(2, 2)+sum(1+2,2,3)");
@@ -54,7 +54,7 @@ public class DeterministicTreeParserTest extends TestCase {
 
   public void testEvaluate_WithAssignment()
       throws ParserException, EvaluationException, ParameterException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     p.addFunction(new NonDeterministicFunction());
 
     Expression xp = p.parseExpression("a=200+2+nondeterministic(2, 2)");
@@ -69,7 +69,7 @@ public class DeterministicTreeParserTest extends TestCase {
   }
 
   public void testEvaluate2() throws ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     p.addFunction(new NonDeterministicFunction());
 
     Expression xp = p.parseExpression("100+nondeterministic(4, 1)*10");
@@ -83,7 +83,7 @@ public class DeterministicTreeParserTest extends TestCase {
   }
 
   public void testEvaluate_VariableResolution() throws ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     p.setVariable("simpleInt", new BigDecimal(10));
 
     Expression xp = p.parseExpression("1+simpleInt");
@@ -105,7 +105,8 @@ public class DeterministicTreeParserTest extends TestCase {
     }
 
     @Override
-    public Object childEvaluate(Parser parser, String functionName, List<Object> parameters) {
+    public Object childEvaluate(
+        MapToolParser parser, String functionName, List<Object> parameters) {
       return BigDecimal.ONE;
     }
   }

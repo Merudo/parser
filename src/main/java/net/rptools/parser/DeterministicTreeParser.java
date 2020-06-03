@@ -14,37 +14,37 @@
  */
 package net.rptools.parser;
 
-import static net.rptools.parser.ExpressionParserTokenTypes.ASSIGNEE;
-import static net.rptools.parser.ExpressionParserTokenTypes.FALSE;
-import static net.rptools.parser.ExpressionParserTokenTypes.FUNCTION;
-import static net.rptools.parser.ExpressionParserTokenTypes.HEXNUMBER;
-import static net.rptools.parser.ExpressionParserTokenTypes.NUMBER;
-import static net.rptools.parser.ExpressionParserTokenTypes.OPERATOR;
-import static net.rptools.parser.ExpressionParserTokenTypes.PROMPTVARIABLE;
-import static net.rptools.parser.ExpressionParserTokenTypes.STRING;
-import static net.rptools.parser.ExpressionParserTokenTypes.TRUE;
-import static net.rptools.parser.ExpressionParserTokenTypes.UNARY_OPERATOR;
-import static net.rptools.parser.ExpressionParserTokenTypes.VARIABLE;
+import static net.rptools.parser.ExpressionParser.ASSIGNEE;
+import static net.rptools.parser.ExpressionParser.FALSE;
+import static net.rptools.parser.ExpressionParser.FUNCTION;
+import static net.rptools.parser.ExpressionParser.HEXNUMBER;
+import static net.rptools.parser.ExpressionParser.NUMBER;
+import static net.rptools.parser.ExpressionParser.OPERATOR;
+import static net.rptools.parser.ExpressionParser.PROMPTVARIABLE;
+import static net.rptools.parser.ExpressionParser.STRING;
+import static net.rptools.parser.ExpressionParser.TRUE;
+import static net.rptools.parser.ExpressionParser.UNARY_OPERATOR;
+import static net.rptools.parser.ExpressionParser.VARIABLE;
 
-import antlr.collections.AST;
 import java.math.BigDecimal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.rptools.parser.function.EvaluationException;
 import net.rptools.parser.function.Function;
+import org.antlr.runtime.tree.Tree;
 
 public class DeterministicTreeParser {
   private static final Logger log = Logger.getLogger(EvaluationTreeParser.class.getName());
 
-  private final Parser parser;
+  private final MapToolParser parser;
   private final ExpressionParser xParser;
 
-  public DeterministicTreeParser(Parser parser, ExpressionParser xParser) {
+  public DeterministicTreeParser(MapToolParser parser, ExpressionParser xParser) {
     this.parser = parser;
     this.xParser = xParser;
   }
 
-  public AST evaluate(AST node) throws ParserException {
+  public Tree evaluate(Tree node) throws ParserException {
     if (node == null) return null;
 
     switch (node.getType()) {
@@ -54,24 +54,9 @@ public class DeterministicTreeParser {
       case ASSIGNEE:
       case TRUE:
       case FALSE:
-        node.setNextSibling(evaluate(node.getNextSibling()));
+        setRightSibling(node, (evaluate(getRightSibling(node))));
         return node;
       case VARIABLE:
-        {
-          String name = node.getText();
-          if (!parser.containsVariable(name, VariableModifiers.None)) {
-            throw new EvaluationException(String.format("Undefined variable: %s", name));
-          }
-          Object value = parser.getVariable(node.getText(), VariableModifiers.None);
-
-          if (log.isLoggable(Level.FINEST))
-            log.finest(String.format("VARIABLE: name=%s, value=%s\n", node.getText(), value));
-
-          AST newNode = createNode(value);
-          newNode.setNextSibling(evaluate(node.getNextSibling()));
-
-          return newNode;
-        }
       case PROMPTVARIABLE:
         {
           String name = node.getText();
@@ -83,8 +68,9 @@ public class DeterministicTreeParser {
           if (log.isLoggable(Level.FINEST))
             log.finest(String.format("VARIABLE: name=%s, value=%s\n", node.getText(), value));
 
-          AST newNode = createNode(value);
-          newNode.setNextSibling(evaluate(node.getNextSibling()));
+          Tree newNode = createNode(value);
+          node.getParent().setChild(GetNodeIndex(node), newNode);
+          setRightSibling(newNode, (evaluate(getRightSibling(newNode))));
 
           return newNode;
         }
@@ -101,13 +87,14 @@ public class DeterministicTreeParser {
           if (!function.isDeterministic()) {
             Object value = parser.getEvaluationTreeParser().evaluate(node);
 
-            AST newNode = createNode(value);
-            newNode.setNextSibling(evaluate(node.getNextSibling()));
+            Tree newNode = createNode(value);
+            node.getParent().setChild(GetNodeIndex(node), newNode);
+            setRightSibling(newNode, (evaluate(getRightSibling(newNode))));
 
             return newNode;
           } else {
-            node.setFirstChild(evaluate(node.getFirstChild()));
-            node.setNextSibling(evaluate(node.getNextSibling()));
+            node.setChild(0, evaluate(node.getChild(0)));
+            setRightSibling(node, (evaluate(getRightSibling(node))));
             return node;
           }
         }
@@ -117,17 +104,44 @@ public class DeterministicTreeParser {
     }
   }
 
-  private AST createNode(Object value) {
-    AST newNode = xParser.getASTFactory().create();
+  private Tree createNode(Object value) {
+    Tree newNode;
 
     if (value instanceof BigDecimal) {
-      newNode.setType(NUMBER);
-      newNode.setText(value.toString());
+      newNode = (Tree) xParser.getTreeAdaptor().create(NUMBER, value.toString());
     } else {
-      newNode.setType(STRING);
-      newNode.setText(value.toString());
+      newNode = (Tree) xParser.getTreeAdaptor().create(STRING, value.toString());
+    }
+    return newNode;
+  }
+
+  public static void setRightSibling(Tree node, Tree sibling) {
+    int index = GetNodeIndex(node);
+
+    if (index < 0) return;
+
+    node.getParent().setChild(index + 1, sibling);
+  }
+
+  public static Tree getRightSibling(Tree node) {
+    int index = GetNodeIndex(node);
+
+    return index >= 0 && index < node.getParent().getChildCount() - 1
+        ? node.getParent().getChild(index + 1)
+        : null;
+  }
+
+  public static int GetNodeIndex(Tree node) {
+    Tree parent = node.getParent();
+
+    if (parent == null) return -1;
+
+    for (int i = 0; i < parent.getChildCount(); i++) {
+      if (parent.getChild(i).equals(node)) {
+        return i;
+      }
     }
 
-    return newNode;
+    return -1;
   }
 }

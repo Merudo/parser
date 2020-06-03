@@ -11,27 +11,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  */
-header { package net.rptools.parser; }
-
-class ExpressionParser extends Parser;
+grammar Expression;
 
 options {
-    k = 2;
-    buildAST = true;
+    output = AST;
+    language = Java;
 }
 
-imaginaryTokenDefinitions :
-	ASSIGNEE
-    SIGN_MINUS
-    SIGN_PLUS
-    FUNCTION
-    OPERATOR
-    UNARY_OPERATOR
-    VARIABLE
-    PROMPTVARIABLE
-    STRING
-    ;
-    
+tokens {
+    ASSIGNEE;
+    SIGN_MINUS;
+    SIGN_PLUS;
+    FUNCTION;
+    OPERATOR;
+    UNARY_OPERATOR;
+    VARIABLE;
+    PROMPTVARIABLE;
+    STRING;
+}
+
+@header { package net.rptools.parser; }
+
+@lexer::header { package net.rptools.parser; }
+
 expression:
                 expr
                 |
@@ -39,7 +41,9 @@ expression:
     ;
     
 assignmentExpression:
-                id:IDENTIFIER {#id.setType(ASSIGNEE);} t1:ASSIGN^ {#t1.setType(OPERATOR);} expr
+               (id=IDENTIFIER -> ^(ASSIGNEE[$id]))
+               (t1=ASSIGN expr -> ^(OPERATOR[$t1]))
+               expr
     ;
 
 expr:
@@ -47,36 +51,39 @@ expr:
     ;
     
 orExpression:
-				andExpression
-				(
-					t1:OR^ {#t1.setType(OPERATOR);}
-					andExpression) *
-	;
+		andExpression
+		(
+                 (t1=OR -> ^(OPERATOR[$t1]))
+                 andExpression
+        )*
+	    ;
     
 andExpression:
-				compareExpression
-				(
-					t1:AND^ {#t1.setType(OPERATOR);}
-					compareExpression) *
-	;
+		compareExpression
+		(
+                  (t1=AND compareExpression-> ^(OPERATOR[$t1]))
+                  compareExpression
+        ) *
+	    ;
 	
 compareExpression:
-				 notExpression
+		notExpression
                 (
                     (
-                    	t1:GE^ {#t1.setType(OPERATOR);}
-                       |t2:GT^ {#t2.setType(OPERATOR);}
-                       |t3:LT^ {#t3.setType(OPERATOR);}
-                       |t4:LE^ {#t4.setType(OPERATOR);}
-                       |t5:EQUALS^ {#t5.setType(OPERATOR);}
-                       |t6:NOTEQUALS^ {#t6.setType(OPERATOR);}
+                    	t1=GE -> ^(OPERATOR[$t1])
+                       |t2=GT -> ^(OPERATOR[$t2])
+                       |t3=LT -> ^(OPERATOR[$t3])
+                       |t4=LE -> ^(OPERATOR[$t4])
+                       |t5=EQUALS -> ^(OPERATOR[$t5])
+                       |t6=NOTEQUALS -> ^(OPERATOR[$t6])
                      ) 
-                     notExpression)*
-    ;
+                     notExpression
+                 )*
+                 ;
 	
 notExpression:
                 (
-                    (t1:NOT^ {#t1.setType(UNARY_OPERATOR);})? 
+                    ((t1=NOT -> ^(UNARY_OPERATOR[$t1])) additiveExpression)?
                     additiveExpression
                 )
     ;
@@ -85,38 +92,38 @@ additiveExpression:
                 multiplicitiveExpression
                 (
                     (
-                    	t1:PLUS^ {#t1.setType(OPERATOR);}
-                       |t2:MINUS^ {#t2.setType(OPERATOR);}
+                    	t1=PLUS  -> ^(OPERATOR[$t1])
+                       |t2=MINUS -> ^(OPERATOR[$t2])
                      ) 
-                     multiplicitiveExpression)*
+                     multiplicitiveExpression
+               )*
     ;
 
 multiplicitiveExpression:
                 powerExpression
                 (
                 	(
-                		t1:MULTIPLY^ {#t1.setType(OPERATOR);}
-                	   |t2:DIVIDE^ {#t2.setType(OPERATOR);}
+                	    t1=MULTIPLY -> ^(OPERATOR[$t1])
+                	   |t2=DIVIDE   -> ^(OPERATOR[$t2])
                 	) 
-                	powerExpression)*
+                	powerExpression
+                )*
     ;
     
 powerExpression:
                 unaryExpression
                 (
-                	(
-                		t1:POWER^ {#t1.setType(OPERATOR);}
-                	) 
+                	(t1=POWER -> ^(OPERATOR[$t1]))
                 	unaryExpression)*
 	;
 
 unaryExpression:
                 (
-                    (t1:PLUS^ {#t1.setType(UNARY_OPERATOR);}
+                    (t1=PLUS -> ^(UNARY_OPERATOR[$t1])
                     |
-                    t2:MINUS^ {#t2.setType(UNARY_OPERATOR);}
+                    t2=MINUS -> ^(UNARY_OPERATOR[$t2])
                     |
-                    t3:NOT^ {#t3.setType(UNARY_OPERATOR);})? 
+                    t3=NOT constantExpression -> ^(UNARY_OPERATOR[$t3]))?
                     constantExpression
                 )
     ;
@@ -134,9 +141,9 @@ constantExpression:
                 |
                 variable
                 |
-                t1:SINGLE_QUOTED_STRING {#t1.setType(STRING);}
+                t1=SINGLE_QUOTED_STRING -> ^(STRING[$t1])
                 |
-                t2:DOUBLE_QUOTED_STRING {#t2.setType(STRING);}
+                t2=DOUBLE_QUOTED_STRING -> ^(STRING[$t2])
                 | 
                 LPAREN! expr RPAREN!
     ;
@@ -144,41 +151,34 @@ constantExpression:
 
 
 variable:
-               QUESTION! id2:IDENTIFIER {#id2.setType(PROMPTVARIABLE);}
+               QUESTION id2=IDENTIFIER -> ^(PROMPTVARIABLE[$id2])
                |
-               id1:IDENTIFIER {#id1.setType(VARIABLE);}
+               id1=IDENTIFIER -> ^(VARIABLE[$id1])
     ;
 
 function:
-               id:IDENTIFIER^ {#id.setType(FUNCTION);} LPAREN! parameterList RPAREN!
+               id=IDENTIFIER LPAREN parameterList RPAREN -> ^(FUNCTION[$id]) parameterList
     ;
 
 parameterList: (expr (COMMA! expr)* )?
     ;
 
 
-class ExpressionLexer extends Lexer;
-
-options {
-    k=3;    // needed for newline junk
-    charVocabulary='\u0000'..'\u007F';  // allow ascii
-}
-
 ASSIGN  :   '=' ;
 QUOTE   :   '"' ;
 
 // Logical operators
-OR      :   "||" ;
-AND     :   "&&" ;
-NOT		:   '!' ;
-EQUALS  :   "==" ;
-NOTEQUALS : "!=" ;
-GE		:   ">=" ;
-GT      :   ">" ;
-LT      :   "<" ;
-LE      :   "<=" ;
-TRUE	:  "true";
-FALSE   :  "false";
+OR      :    '||';
+AND     :    '&&';
+NOT	:     '!';
+EQUALS  :    '==';
+NOTEQUALS:   '!=';
+GE      :    '>=';
+GT      :    '>' ;
+LT      :    '<' ;
+LE      :    '<=';
+TRUE	:  'true';
+FALSE   :  'false';
 
 // Math operators
 PLUS    :   '+' ;
@@ -191,26 +191,26 @@ LPAREN  :   '(' ;
 RPAREN  :   ')' ;
 COMMA   :   ',' ;
 WS      :   ( ' '
-            | "\r\n"
+            | '\r\n'
             | '\n'
             | '\t'
             )
-            {$setType(Token.SKIP);}
+            {skip();}
     ;
-SEMI    : ';' ;
+SEMI     : ';' ;
 QUESTION : '?' ;
 
 NUMBER               : INT ('.' INT)? ;
-HEXNUMBER			 : '0' 'x' (HEXDIGIT)+ ;
+HEXNUMBER            : '0' 'x' (HEXDIGIT)+ ;
 IDENTIFIER           : LETTER (LETTER|DIGIT|'.'|'_')* ;
 SINGLE_QUOTED_STRING : '\'' ( ~'\'' )* '\'' ;
 DOUBLE_QUOTED_STRING : '\"' ( ~'\"' )* '\"' ;
 
-protected HEXDIGIT   : ('0'..'9'|'A'..'F'|'a'..'f');
-protected DID        : ('d' | 'D') ;
-protected INT        : ('0'..'9')+ ;
-protected DIGIT      : '0'..'9' ;
-protected LETTER     : ('A'..'Z'|'a'..'z') ;
+fragment HEXDIGIT   : ('0'..'9'|'A'..'F'|'a'..'f');
+fragment DID        : ('d' | 'D') ;
+fragment INT        : ('0'..'9')+ ;
+fragment DIGIT      : '0'..'9' ;
+fragment LETTER     : ('A'..'Z'|'a'..'z'|'\u00c0'..'\u00d6'|'\u00d8'..'\u00f6'|'\u00f8'..'\u00ff') ;
 
 
 

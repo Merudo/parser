@@ -15,13 +15,13 @@
 package net.rptools.parser.transform;
 
 import junit.framework.TestCase;
-import net.rptools.parser.Parser;
+import net.rptools.parser.MapToolParser;
 import net.rptools.parser.ParserException;
 
 public class RegexpStringTransformerTest extends TestCase {
 
   public void testSimpleReplacement() throws ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     p.addTransformer(new RegexpStringTransformer(new String[] {"foo"}, new String[] {"bar"}));
 
@@ -30,7 +30,7 @@ public class RegexpStringTransformerTest extends TestCase {
   }
 
   public void testReplacementWithSubstitutions() throws ParserException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
 
     p.addTransformer(
         new RegexpStringTransformer(

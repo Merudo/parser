@@ -16,7 +16,7 @@ package net.rptools.parser.function.impl;
 
 import java.math.BigDecimal;
 import java.util.List;
-import net.rptools.parser.Parser;
+import net.rptools.parser.MapToolParser;
 import net.rptools.parser.function.AbstractNumberFunction;
 import net.rptools.parser.function.EvaluationException;
 import net.rptools.parser.function.ParameterException;
@@ -30,7 +30,7 @@ public class SquareRoot extends AbstractNumberFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws EvaluationException, ParameterException {
     int scale = DEFAULT_SCALE;
     if (parameters.size() == 2) {
@@ -44,7 +44,7 @@ public class SquareRoot extends AbstractNumberFunction {
   //  the Babylonian square root method (Newton's method)
   private BigDecimal sqrt(BigDecimal value, final int scale) {
     BigDecimal x0 = new BigDecimal("0");
-    BigDecimal x1 = new BigDecimal(Math.sqrt(value.doubleValue()));
+    BigDecimal x1 = BigDecimal.valueOf(Math.sqrt(value.doubleValue()));
 
     while (!x0.equals(x1)) {
       x0 = x1;

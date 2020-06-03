@@ -15,7 +15,7 @@
 package net.rptools.parser.function.impl;
 
 import java.util.List;
-import net.rptools.parser.Parser;
+import net.rptools.parser.MapToolParser;
 import net.rptools.parser.function.AbstractLogicalOperatorFunction;
 import net.rptools.parser.function.EvaluationException;
 import net.rptools.parser.function.ParameterException;
@@ -26,7 +26,7 @@ public class Not extends AbstractLogicalOperatorFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws EvaluationException, ParameterException {
     return BooleanAsBigDecimal(!ConvertToBoolean(parameters.get(0)));
   }

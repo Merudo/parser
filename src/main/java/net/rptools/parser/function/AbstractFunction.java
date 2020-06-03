@@ -15,7 +15,7 @@
 package net.rptools.parser.function;
 
 import java.util.List;
-import net.rptools.parser.Parser;
+import net.rptools.parser.MapToolParser;
 import net.rptools.parser.ParserException;
 
 public abstract class AbstractFunction implements Function {
@@ -53,7 +53,7 @@ public abstract class AbstractFunction implements Function {
     return aliases;
   }
 
-  public final Object evaluate(Parser parser, String functionName, List<Object> parameters)
+  public final Object evaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws ParserException {
     checkParameters(functionName, parameters);
 
@@ -107,6 +107,6 @@ public abstract class AbstractFunction implements Function {
     return false;
   }
 
-  public abstract Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
-      throws ParserException;
+  public abstract Object childEvaluate(
+      MapToolParser parser, String functionName, List<Object> parameters) throws ParserException;
 }

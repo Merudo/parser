@@ -15,7 +15,7 @@
 package net.rptools.parser.function;
 
 import java.util.List;
-import net.rptools.parser.Parser;
+import net.rptools.parser.MapToolParser;
 import net.rptools.parser.ParserException;
 
 public interface Function {
@@ -23,7 +23,7 @@ public interface Function {
 
   public String[] getAliases();
 
-  public Object evaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object evaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws ParserException;
 
   public void checkParameters(String functionName, List<Object> parameters)

@@ -53,7 +53,7 @@ public class InlineTreeFormatterTest extends TestCase {
 
   private void compare(String expression, String expected)
       throws ParserException, EvaluationException, ParameterException {
-    Parser p = new Parser();
+    MapToolParser p = new MapToolParser();
     Expression xp = p.parseExpression(expression);
 
     InlineTreeFormatter tf = new InlineTreeFormatter();

@@ -17,7 +17,7 @@ package net.rptools.parser.function.impl;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
-import net.rptools.parser.Parser;
+import net.rptools.parser.MapToolParser;
 import net.rptools.parser.function.AbstractNumberFunction;
 import net.rptools.parser.function.EvaluationException;
 import net.rptools.parser.function.ParameterException;
@@ -28,7 +28,7 @@ public class BitwiseNot extends AbstractNumberFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws EvaluationException, ParameterException {
     BigInteger value = ((BigDecimal) parameters.get(0)).toBigInteger();
 

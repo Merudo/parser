@@ -14,24 +14,23 @@
  */
 package net.rptools.parser;
 
-import static net.rptools.parser.ExpressionParserTokenTypes.ASSIGNEE;
-import static net.rptools.parser.ExpressionParserTokenTypes.FUNCTION;
-import static net.rptools.parser.ExpressionParserTokenTypes.HEXNUMBER;
-import static net.rptools.parser.ExpressionParserTokenTypes.NUMBER;
-import static net.rptools.parser.ExpressionParserTokenTypes.OPERATOR;
-import static net.rptools.parser.ExpressionParserTokenTypes.STRING;
-import static net.rptools.parser.ExpressionParserTokenTypes.UNARY_OPERATOR;
-import static net.rptools.parser.ExpressionParserTokenTypes.VARIABLE;
+import static net.rptools.parser.ExpressionParser.ASSIGNEE;
+import static net.rptools.parser.ExpressionParser.FUNCTION;
+import static net.rptools.parser.ExpressionParser.HEXNUMBER;
+import static net.rptools.parser.ExpressionParser.NUMBER;
+import static net.rptools.parser.ExpressionParser.OPERATOR;
+import static net.rptools.parser.ExpressionParser.STRING;
+import static net.rptools.parser.ExpressionParser.UNARY_OPERATOR;
+import static net.rptools.parser.ExpressionParser.VARIABLE;
 
-import antlr.collections.AST;
 import java.util.HashMap;
 import java.util.Map;
 import net.rptools.parser.function.EvaluationException;
-import net.rptools.parser.function.ParameterException;
+import org.antlr.runtime.tree.Tree;
 
 public class InlineTreeFormatter {
 
-  private static Map<String, Integer> ORDER_OF_OPERATIONS = new HashMap<String, Integer>();
+  private static final Map<String, Integer> ORDER_OF_OPERATIONS = new HashMap<>();
 
   static {
     // P(1) E(2) MD(3) AS(4):
@@ -43,14 +42,14 @@ public class InlineTreeFormatter {
     ORDER_OF_OPERATIONS.put("-", 4);
   }
 
-  public String format(AST node) throws EvaluationException, ParameterException {
+  public String format(Tree node) throws EvaluationException {
     StringBuilder sb = new StringBuilder();
     format(node, sb);
 
     return sb.toString();
   }
 
-  private void format(AST node, StringBuilder sb) throws EvaluationException, ParameterException {
+  private void format(Tree node, StringBuilder sb) throws EvaluationException {
     if (node == null) return;
 
     switch (node.getType()) {
@@ -68,15 +67,15 @@ public class InlineTreeFormatter {
           if (!"+".equals(node.getText())) {
             sb.append(node.getText());
           }
-          format(node.getFirstChild(), sb);
+          format(node.getChild(0), sb);
           return;
         }
       case OPERATOR:
         {
           int currentLevel = ORDER_OF_OPERATIONS.get(node.getText());
 
-          AST child = node.getFirstChild();
-          while (child != null) {
+          for (int i = 0; i < node.getChildCount(); i++) {
+            Tree child = node.getChild(i);
             if (child.getType() == OPERATOR) {
               int childLevel = ORDER_OF_OPERATIONS.get(child.getText());
               if (currentLevel < childLevel) sb.append("(");
@@ -85,10 +84,9 @@ public class InlineTreeFormatter {
             } else {
               format(child, sb);
             }
-
-            child = child.getNextSibling();
-
-            if (child != null) sb.append(' ').append(node.getText()).append(' ');
+            if (i < node.getChildCount() - 1) {
+              sb.append(' ').append(node.getText()).append(' ');
+            }
           }
 
           return;
@@ -96,13 +94,13 @@ public class InlineTreeFormatter {
       case FUNCTION:
         {
           sb.append(node.getText()).append("(");
-          AST child = node.getFirstChild();
-          while (child != null) {
+          for (int i = 0; i < node.getChildCount(); i++) {
+            Tree child = node.getChild(i);
             format(child, sb);
-            child = child.getNextSibling();
-            if (child != null) sb.append(", ");
+            if (i < node.getChildCount() - 1) {
+              sb.append(", ");
+            }
           }
-
           sb.append(")");
           return;
         }

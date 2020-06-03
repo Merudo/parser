@@ -14,20 +14,20 @@
  */
 package net.rptools.parser;
 
-import antlr.collections.AST;
 import net.rptools.parser.function.EvaluationException;
-import net.rptools.parser.function.ParameterException;
+import org.antlr.runtime.tree.Tree;
 
 public class Expression {
   private static final InlineTreeFormatter inlineFormatter = new InlineTreeFormatter();
 
-  private final Parser parser;
+  private final MapToolParser parser;
   private final ExpressionParser expressionParser;
-  private final AST tree;
+  private final Tree tree;
 
   private transient Expression deterministicExpression;
 
-  Expression(Parser parser, ExpressionParser expressionParser, AST tree, boolean deterministic) {
+  Expression(
+      MapToolParser parser, ExpressionParser expressionParser, Tree tree, boolean deterministic) {
     this.parser = parser;
     this.expressionParser = expressionParser;
     this.tree = tree;
@@ -36,11 +36,11 @@ public class Expression {
     }
   }
 
-  Expression(Parser parser, ExpressionParser expressionParser, AST tree) {
+  Expression(MapToolParser parser, ExpressionParser expressionParser, Tree tree) {
     this(parser, expressionParser, tree, false);
   }
 
-  public Parser getParser() {
+  public MapToolParser getParser() {
     return parser;
   }
 
@@ -48,7 +48,7 @@ public class Expression {
     return expressionParser;
   }
 
-  public AST getTree() {
+  public Tree getTree() {
     return tree;
   }
 
@@ -59,10 +59,10 @@ public class Expression {
   private void createDeterministicExpression() throws ParserException {
     DeterministicTreeParser tp = new DeterministicTreeParser(parser, expressionParser);
 
-    AST dupTree = expressionParser.getASTFactory().dupTree(tree);
-    AST newTree = tp.evaluate(dupTree);
+    Tree dupTree = (Tree) expressionParser.getTreeAdaptor().dupTree(tree);
+    Tree newTree = tp.evaluate(dupTree);
 
-    if (tree.equalsTree(newTree)) {
+    if (tree.equals(newTree)) {
       deterministicExpression = this;
     } else {
       deterministicExpression = new Expression(parser, expressionParser, newTree, true);
@@ -85,7 +85,7 @@ public class Expression {
     return deterministicExpression;
   }
 
-  public String format() throws EvaluationException, ParameterException {
+  public String format() throws EvaluationException {
     return inlineFormatter.format(tree);
   }
 }
