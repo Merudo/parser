@@ -27,7 +27,7 @@ public class Multiplication extends AbstractNumberFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws EvaluationException, ParameterException {
     BigDecimal total = BigDecimal.ONE;
 

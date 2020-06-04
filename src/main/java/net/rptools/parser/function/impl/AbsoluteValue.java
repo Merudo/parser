@@ -25,7 +25,7 @@ public class AbsoluteValue extends AbstractNumberFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters) {
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters) {
     BigDecimal value = (BigDecimal) parameters.get(0);
 
     return value.abs();

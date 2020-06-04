@@ -14,10 +14,8 @@
  */
 package net.rptools.parser;
 
-import antlr.CommonAST;
-import antlr.RecognitionException;
-import antlr.TokenStreamException;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -61,8 +59,12 @@ import net.rptools.parser.function.impl.StrEquals;
 import net.rptools.parser.function.impl.StrNotEquals;
 import net.rptools.parser.function.impl.Subtraction;
 import net.rptools.parser.transform.Transformer;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.tree.ParseTree;
 
-public class Parser implements VariableResolver {
+public class MapToolParser implements VariableResolver {
   private final Map<String, Function> functions = new CaseInsensitiveHashMap<Function>();
 
   private final List<Transformer> transforms = new ArrayList<Transformer>();
@@ -75,15 +77,15 @@ public class Parser implements VariableResolver {
   // Constructor(s)
   ///////////////////////////////////////////////////////////////////////////
 
-  public Parser() {
+  public MapToolParser() {
     this(true);
   }
 
-  public Parser(boolean addDefaultFunctions) {
+  public MapToolParser(boolean addDefaultFunctions) {
     this(null, addDefaultFunctions);
   }
 
-  public Parser(VariableResolver variableResolver, boolean addDefaultFunctions) {
+  public MapToolParser(VariableResolver variableResolver, boolean addDefaultFunctions) {
 
     if (addDefaultFunctions) {
       addStandardOperators();
@@ -248,17 +250,17 @@ public class Parser implements VariableResolver {
     try {
       String s = applyTransforms(expression);
 
-      ExpressionLexer lexer = new ExpressionLexer(new ByteArrayInputStream(s.getBytes()));
-      ExpressionParser parser = new ExpressionParser(lexer);
+      ExpressionLexer lexer = new ExpressionLexer(new ANTLRInputStream(new ByteArrayInputStream(s.getBytes())));
+      ExpressionParser parser = new ExpressionParser(new CommonTokenStream(lexer));
+      ExpressionParser.ExpressionContext tree = parser.expression();
 
       parser.expression();
-      CommonAST t = (CommonAST) parser.getAST();
 
-      return new Expression(this, parser, t);
+      return new Expression(this, parser, tree);
 
     } catch (RecognitionException e) {
       throw new ParserException(e);
-    } catch (TokenStreamException e) {
+    } catch (IOException e) {
       throw new ParserException(e);
     }
   }

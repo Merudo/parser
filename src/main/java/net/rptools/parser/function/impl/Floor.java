@@ -27,7 +27,7 @@ public class Floor extends AbstractNumberFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws EvaluationException, ParameterException {
     BigDecimal value = (BigDecimal) parameters.get(0);
     return new BigDecimal(Math.floor(value.doubleValue()));

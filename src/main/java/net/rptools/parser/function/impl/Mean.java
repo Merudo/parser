@@ -28,7 +28,7 @@ public class Mean extends AbstractFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws EvaluationException, ParameterException {
     if (parameters.size() == 1) {
       // unary usage

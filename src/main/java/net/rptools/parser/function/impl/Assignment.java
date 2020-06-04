@@ -25,7 +25,7 @@ public class Assignment extends AbstractFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws ParserException {
 
     String name = (String) parameters.get(0);

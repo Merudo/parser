@@ -26,7 +26,7 @@ public class Not extends AbstractLogicalOperatorFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws EvaluationException, ParameterException {
     return BooleanAsBigDecimal(!ConvertToBoolean(parameters.get(0)));
   }

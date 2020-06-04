@@ -28,7 +28,7 @@ public class BitwiseNot extends AbstractNumberFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws EvaluationException, ParameterException {
     BigInteger value = ((BigDecimal) parameters.get(0)).toBigInteger();
 

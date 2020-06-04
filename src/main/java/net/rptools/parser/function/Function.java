@@ -23,7 +23,7 @@ public interface Function {
 
   public String[] getAliases();
 
-  public Object evaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object evaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws ParserException;
 
   public void checkParameters(String functionName, List<Object> parameters)

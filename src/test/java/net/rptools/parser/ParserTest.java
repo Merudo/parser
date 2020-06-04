@@ -77,7 +77,7 @@ public class ParserTest extends TestCase {
         new AbstractFunction(1, 1, "increment") {
 
           @Override
-          public Object childEvaluate(Parser parser, String functionName, List<Object> parameters) {
+          public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters) {
             BigDecimal value = (BigDecimal) parameters.get(0);
             return value.add(BigDecimal.ONE);
           }

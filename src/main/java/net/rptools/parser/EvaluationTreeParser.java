@@ -14,19 +14,18 @@
  */
 package net.rptools.parser;
 
-import static net.rptools.parser.ExpressionParserTokenTypes.ASSIGNEE;
-import static net.rptools.parser.ExpressionParserTokenTypes.FALSE;
-import static net.rptools.parser.ExpressionParserTokenTypes.FUNCTION;
-import static net.rptools.parser.ExpressionParserTokenTypes.HEXNUMBER;
-import static net.rptools.parser.ExpressionParserTokenTypes.NUMBER;
-import static net.rptools.parser.ExpressionParserTokenTypes.OPERATOR;
-import static net.rptools.parser.ExpressionParserTokenTypes.PROMPTVARIABLE;
-import static net.rptools.parser.ExpressionParserTokenTypes.STRING;
-import static net.rptools.parser.ExpressionParserTokenTypes.TRUE;
-import static net.rptools.parser.ExpressionParserTokenTypes.UNARY_OPERATOR;
-import static net.rptools.parser.ExpressionParserTokenTypes.VARIABLE;
+import static net.rptools.parser.ExpressionParser.ASSIGNEE;
+import static net.rptools.parser.ExpressionParser.FALSE;
+import static net.rptools.parser.ExpressionParser.FUNCTION;
+import static net.rptools.parser.ExpressionParser.HEXNUMBER;
+import static net.rptools.parser.ExpressionParser.NUMBER;
+import static net.rptools.parser.ExpressionParser.OPERATOR;
+import static net.rptools.parser.ExpressionParser.PROMPTVARIABLE;
+import static net.rptools.parser.ExpressionParser.STRING;
+import static net.rptools.parser.ExpressionParser.TRUE;
+import static net.rptools.parser.ExpressionParser.UNARY_OPERATOR;
+import static net.rptools.parser.ExpressionParser.VARIABLE;
 
-import antlr.collections.AST;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -35,25 +34,34 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.rptools.parser.function.EvaluationException;
 import net.rptools.parser.function.Function;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 public class EvaluationTreeParser {
   private static final Logger log = Logger.getLogger(EvaluationTreeParser.class.getName());
 
-  private final Parser parser;
+  private final MapToolParser parser;
 
-  public EvaluationTreeParser(Parser parser) {
+  public EvaluationTreeParser(MapToolParser parser) {
     this.parser = parser;
   }
 
-  public Object evaluate(AST node) throws ParserException {
-    AST child;
+  public Object evaluate(ParseTree node) throws ParserException {
+    ParseTree child;
+    Token token = null;
+    if (node instanceof ParserRuleContext) {
+      token = ((ParserRuleContext) node).getStart(); // or #getStop
+    } else if (node instanceof TerminalNode) {        // TerminalNodeImpl or ErrorNode
+      token = ((TerminalNode) node).getSymbol();
+    }
 
-    switch (node.getType()) {
+    if (token == null) return null;
+
+    switch (token.getType()) {
       case ASSIGNEE:
-        {
-          String name = node.getText();
-          return name;
-        }
+        return node.getText();
       case TRUE:
         return BigDecimal.ONE;
       case FALSE:
@@ -68,7 +76,7 @@ public class EvaluationTreeParser {
         {
           String s = node.getText();
           BigInteger i = new BigInteger(s.substring(2), 16);
-          if (log.isLoggable(Level.FINEST)) log.finest(String.format("HEXNUMBER: value=%f\n", i));
+          if (log.isLoggable(Level.FINEST)) log.finest(String.format("HEXNUMBER: value=%d\n", i));
           return new BigDecimal(i);
         }
       case UNARY_OPERATOR:
@@ -76,14 +84,13 @@ public class EvaluationTreeParser {
           String name = node.getText();
 
           if (log.isLoggable(Level.FINEST))
-            log.finest(String.format("UNARY_FUNCTION: name=%s type=%d\n", name, node.getType()));
+            log.finest(String.format("UNARY_FUNCTION: name=%s type=%d\n", name, token.getType()));
 
-          List<Object> params = new ArrayList<Object>();
+          List<Object> params = new ArrayList<>();
 
-          child = node.getFirstChild();
-          if (child != null) {
-            params.add(evaluate(child));
-            while ((child = child.getNextSibling()) != null) {
+          for (int i = 0; i < node.getChildCount(); i++){
+            child = node.getChild(i);
+            if (child != null){
               params.add(evaluate(child));
             }
           }
@@ -100,14 +107,13 @@ public class EvaluationTreeParser {
           String name = node.getText();
 
           if (log.isLoggable(Level.FINEST))
-            log.finest(String.format("FUNCTION: name=%s type=%d\n", name, node.getType()));
+            log.finest(String.format("FUNCTION: name=%s type=%d\n", name, token.getType()));
 
-          List<Object> params = new ArrayList<Object>();
+          List<Object> params = new ArrayList<>();
 
-          child = node.getFirstChild();
-          if (child != null) {
-            params.add(evaluate(child));
-            while ((child = child.getNextSibling()) != null) {
+          for (int i = 0; i < node.getChildCount(); i++){
+            child = node.getChild(i);
+            if (child != null){
               params.add(evaluate(child));
             }
           }
@@ -155,7 +161,7 @@ public class EvaluationTreeParser {
         }
       default:
         throw new EvaluationException(
-            String.format("Unknown node type: name=%s, type=%d", node.getText(), node.getType()));
+            String.format("Unknown node type: name=%s, type=%d", node.getText(), token.getType()));
     }
   }
 }

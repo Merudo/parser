@@ -27,7 +27,7 @@ public class Hypotenuse extends AbstractNumberFunction {
   }
 
   @Override
-  public Object childEvaluate(Parser parser, String functionName, List<Object> parameters)
+  public Object childEvaluate(MapToolParser parser, String functionName, List<Object> parameters)
       throws EvaluationException, ParameterException {
     BigDecimal value1 = (BigDecimal) parameters.get(0);
     BigDecimal value2 = (BigDecimal) parameters.get(1);

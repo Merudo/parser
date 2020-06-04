@@ -14,40 +14,52 @@
  */
 package net.rptools.parser;
 
-import static net.rptools.parser.ExpressionParserTokenTypes.ASSIGNEE;
-import static net.rptools.parser.ExpressionParserTokenTypes.FALSE;
-import static net.rptools.parser.ExpressionParserTokenTypes.FUNCTION;
-import static net.rptools.parser.ExpressionParserTokenTypes.HEXNUMBER;
-import static net.rptools.parser.ExpressionParserTokenTypes.NUMBER;
-import static net.rptools.parser.ExpressionParserTokenTypes.OPERATOR;
-import static net.rptools.parser.ExpressionParserTokenTypes.PROMPTVARIABLE;
-import static net.rptools.parser.ExpressionParserTokenTypes.STRING;
-import static net.rptools.parser.ExpressionParserTokenTypes.TRUE;
-import static net.rptools.parser.ExpressionParserTokenTypes.UNARY_OPERATOR;
-import static net.rptools.parser.ExpressionParserTokenTypes.VARIABLE;
+import static net.rptools.parser.ExpressionParser.ASSIGNEE;
+import static net.rptools.parser.ExpressionParser.FALSE;
+import static net.rptools.parser.ExpressionParser.FUNCTION;
+import static net.rptools.parser.ExpressionParser.HEXNUMBER;
+import static net.rptools.parser.ExpressionParser.NUMBER;
+import static net.rptools.parser.ExpressionParser.OPERATOR;
+import static net.rptools.parser.ExpressionParser.PROMPTVARIABLE;
+import static net.rptools.parser.ExpressionParser.STRING;
+import static net.rptools.parser.ExpressionParser.TRUE;
+import static net.rptools.parser.ExpressionParser.UNARY_OPERATOR;
+import static net.rptools.parser.ExpressionParser.VARIABLE;
 
-import antlr.collections.AST;
 import java.math.BigDecimal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import net.rptools.parser.function.EvaluationException;
 import net.rptools.parser.function.Function;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 public class DeterministicTreeParser {
   private static final Logger log = Logger.getLogger(EvaluationTreeParser.class.getName());
 
-  private final Parser parser;
+  private final MapToolParser parser;
   private final ExpressionParser xParser;
 
-  public DeterministicTreeParser(Parser parser, ExpressionParser xParser) {
+  public DeterministicTreeParser(MapToolParser parser, ExpressionParser xParser) {
     this.parser = parser;
     this.xParser = xParser;
   }
 
-  public AST evaluate(AST node) throws ParserException {
-    if (node == null) return null;
+  public ParseTree evaluate(ParseTree node) throws ParserException {
+    Token token = null;
+    if (node instanceof ParserRuleContext) {
+      token = ((ParserRuleContext) node).getStart(); // or #getStop
+    } else if (node instanceof TerminalNode) {        // TerminalNodeImpl or ErrorNode
+      token = ((TerminalNode) node).getSymbol();
+    }
 
-    switch (node.getType()) {
+    if (token == null) return null;
+
+    switch (token.getType()) {
       case STRING:
       case NUMBER:
       case HEXNUMBER:
@@ -117,7 +129,7 @@ public class DeterministicTreeParser {
     }
   }
 
-  private AST createNode(Object value) {
+  private ParserRuleContext createNode(Object value) {
     AST newNode = xParser.getASTFactory().create();
 
     if (value instanceof BigDecimal) {
@@ -129,5 +141,40 @@ public class DeterministicTreeParser {
     }
 
     return newNode;
+  }
+
+  public static void setRightSibling(ParserRuleContext context){
+    int index = GetNodeIndex(context);
+
+    if (index < 0) return;
+
+    if (index < context.parent.getChildCount() - 1){
+      context.parent.getChild(index+1) = context;
+    }
+  }
+
+  public static ParseTree GetRightSibling(ParserRuleContext context)
+  {
+    int index = GetNodeIndex(context);
+
+    return index >= 0 && index < context.parent.getChildCount() - 1
+            ? context.parent.getChild(index + 1)
+            : null;
+  }
+
+  public static int GetNodeIndex(ParserRuleContext context)
+  {
+    RuleContext parent = context.parent;
+
+    if (parent == null)
+      return -1;
+
+    for (int i = 0; i < parent.getChildCount(); i++) {
+      if (parent.getChild(i) == context) {
+        return i;
+      }
+    }
+
+    return -1;
   }
 }
